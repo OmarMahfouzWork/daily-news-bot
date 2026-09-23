@@ -20,7 +20,8 @@ def _call_gemini(prompt: str) -> str:
         model="gemini-2.5-flash",
         contents=prompt,
     )
-    time.sleep(7)
+    # Rate limiting buffer for free tier
+    time.sleep(5)
     text = response.text.strip()
     print(f"Gemini raw response: {text}", flush=True)
     return text
@@ -32,11 +33,14 @@ def summarize(article: dict) -> tuple:
     description = article.get("description", "")
 
     prompt = (
-        "You are a tech news analyst. Given the article below, respond in EXACTLY this format with no extra text:\n"
-        "SUMMARY: <4-sentence summary covering: what it is, what problem it solves, how it works, why it matters>\n"
+        "You are an executive technical editor summarizing news for engineering leads, system architects, and tech managers.\n"
+        "Given the article below, provide a crisp 3-4 sentence summary covering: "
+        "(1) What was announced/released, (2) How it works technically or structurally, and (3) Why it matters for engineering/product strategy.\n\n"
+        "Respond in EXACTLY this format with no extra text or markdown headers:\n"
+        "SUMMARY: <3-4 sentence technical summary>\n"
         "TAGS: <3-5 comma-separated tags>\n\n"
         f"Title: {title}\n"
-        f"Content: {description[:1000]}"
+        f"Content: {description[:1200]}"
     )
 
     summary = "Summary unavailable"
@@ -48,7 +52,7 @@ def summarize(article: dict) -> tuple:
     except Exception as e1:
         print(f"Gemini error (attempt 1): {str(e1)}", flush=True)
         try:
-            time.sleep(20)
+            time.sleep(15)
             text = _call_gemini(prompt)
             summary, tags = _parse_response(text)
         except Exception as e2:
